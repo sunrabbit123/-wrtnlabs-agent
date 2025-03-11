@@ -33,6 +33,7 @@ export namespace AgenticaPgVectorSelector {
           if (!(e instanceof HttpError)) {
             throw e;
           }
+
           if (e.status !== 404) throw e;
 
           return await functional.applications.create(connection, {
@@ -40,22 +41,9 @@ export namespace AgenticaPgVectorSelector {
             description: undefined,
           });
         });
-      const latestVersion = await functional.applications.by_ids.versions.latest
-        .getLatest(connection, application.id)
-        .catch((e) => {
-          if (!(e instanceof HttpError)) {
-            throw e;
-          }
-          if (e.status !== 404) throw e;
 
-          return null;
-        });
-
-      // @TODO How to consider the version concurrency?
-      const version = (latestVersion?.version ?? 0) + 1;
-
-      await functional.applications.by_ids.versions
-        .create(connection, application.id, { version })
+      const version = await functional.applications.by_ids.versions
+        .create(connection, application.id, {})
         .then((version) =>
           functional.application_versions.by_ids.connectors.create(
             connection,
@@ -65,7 +53,12 @@ export namespace AgenticaPgVectorSelector {
               description: op.function.description ?? "", // typia bugs.
             },
           ),
-        );
+        )
+        .then((v) => v.versionId)
+        .catch((e) => {
+          console.log(e);
+          throw e;
+        });
 
       return { version, applicationId: application.id };
     };

@@ -72,7 +72,15 @@ export const test_benchmark_call_pg_vector_selector = async (): Promise<
     ],
     config: {
       executor: {
-        select: selectorExecute,
+        select: async (ctx) => {
+          const result = await selectorExecute(ctx).catch((e) => {
+            console.log(e);
+            throw e;
+          });
+          console.log("result");
+          console.log(result);
+          return result;
+        },
       },
     },
   });
